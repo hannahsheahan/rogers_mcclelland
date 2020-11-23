@@ -152,7 +152,8 @@ def setup_outputs(args, lookup):
      context in each domain, and each item activates some subset of these."""
 
     context_cov_A = make_hierarchy(args.n_items, args.n_attributes);  # HRS note this is hacked together for now
-    context_cov_B = make_magnitude(args.n_items, args.n_attributes);
+    #context_cov_B = make_magnitude(args.n_items, args.n_attributes);
+    context_cov_B = make_hierarchy(args.n_items, args.n_attributes);
     context_covs = [context_cov_A, context_cov_B]
 
     plt.figure()
@@ -335,7 +336,7 @@ def main():
     testset = net.CreateDataset(dataset)  # HRS note that, for now, train and test are same dataset. As in Rogers/McClelland
 
     # train and test network
-    #model = net.train_network(args, device, trainset, testset)
+    model = net.train_network(args, device, trainset, testset)
 
     # analyse trained network hidden activations
     analyse_network(args, trainset, testset, lookup)

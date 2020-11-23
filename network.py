@@ -18,8 +18,6 @@ from torch.utils.tensorboard import SummaryWriter
 import json
 import random
 from datetime import datetime
-
-# for training I/O
 import argparse
 
 
@@ -136,7 +134,7 @@ class RM_Net(nn.Module):
         self.fc_hitem_activations = F.relu(self.fc_item_to_hitem(x_item))
         self.fc_hcontext_activations = F.relu(self.fc_context_to_hcontext(x_context))
         self.fc_combined_activations = F.relu(self.fc_hitem_to_combined(self.fc_hitem_activations) + self.fc_hcontext_to_combined(self.fc_hcontext_activations))
-        self.output = self.fc_combined_to_out(self.fc_combined_activations)
+        self.output = torch.sigmoid(self.fc_combined_to_out(self.fc_combined_activations))
         return self.output
 
     def get_activations(self, x_item, x_context):
@@ -172,9 +170,9 @@ def define_hyperparams():
     parser.add_argument('--n_attributes', default=15, type=int, help='number of attributes (default: 15)')     # True: task is like Fabrice's with filler trials; False: solely compare trials
 
     # network architecture
-    parser.add_argument('--D_h_item', type=int, default=14, help='hidden size for hidden item representation (default: 100)')
-    parser.add_argument('--D_h_context', type=int, default=14, help='hidden size for hidden context representation (default: 100)')
-    parser.add_argument('--D_h_combined', type=int, default=40, help='hidden size for hidden combined representation (default: 200)')
+    parser.add_argument('--D_h_item', type=int, default=100, help='hidden size for hidden item representation (default: 100)')
+    parser.add_argument('--D_h_context', type=int, default=100, help='hidden size for hidden context representation (default: 100)')
+    parser.add_argument('--D_h_combined', type=int, default=200, help='hidden size for hidden combined representation (default: 200)')
 
     # network training hyperparameters
     parser.add_argument('--batch-size', type=int, default=1, metavar='N', help='input batch size for training (default: 1)')
@@ -257,7 +255,8 @@ def train_network(args, device, trainset, testset):
 
     # Define a model for training
     model = RM_Net(args.D_item_in, args.D_context_in, args.D_out, args.D_h_item, args.D_h_context, args.D_h_combined).to(device)
-    criterion = nn.MSELoss()   # mean squared error loss
+    #criterion = nn.MSELoss()   # mean squared error loss
+    criterion = nn.BCELoss() # binary cross entropy loss
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
     # Define our dataloaders
