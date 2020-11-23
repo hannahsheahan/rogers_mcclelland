@@ -74,15 +74,11 @@ def train(args, model, device, train_loader, optimizer, criterion, epoch, printO
 
         # evaluate performance
         train_loss += loss.item()
-
-        # HRS should implement something here that measures error in another way so
-        # that we can stop training when 99% units are activated within 1% of desired value
-        # as in Rogers/McClelland 08. Can just say if supposed to be off,
-        # is it 99% off (then correct), if its supposed to be on, is it 99% on (then correct)
-        # then when performance based on that metric is like 99% correct stop training.
+        if np.all(np.abs(output-labels) < args.correct_threshold):
+            correct += 1
 
     train_loss /= len(train_loader.dataset)
-    accuracy = 0
+    accuracy = correct / len(train_loader.dataset)
     return train_loss, accuracy
 
 
@@ -101,14 +97,12 @@ def test(args, model, device, test_loader, criterion, printOutput=True):
             output = np.squeeze(output, axis=1)
             test_loss += criterion(output, labels).item()
 
-            # HRS should implement something here that measures error in another way so
-            # that we can stop training when 99% units are activated within 1% of desired value
-            # as in Rogers/McClelland 08. Can just say if supposed to be off,
-            # is it 99% off (then correct), if its supposed to be on, is it 99% on (then correct)
-            # then when performance based on that metric is like 99% correct stop training.
+            print(output)
+            if np.all(np.abs(output-labels) < args.correct_threshold):
+                correct += 1
 
     test_loss /= len(test_loader.dataset)
-    accuracy = 0
+    accuracy = correct / len(test_loader.dataset)
     if printOutput:
         print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(test_loss, correct, len(test_loader.dataset), accuracy))
     return test_loss, accuracy
@@ -185,6 +179,7 @@ def define_hyperparams():
     parser.add_argument('--log-interval', type=int, default=100, metavar='N', help='how many epochs to wait before printing training status')
     parser.add_argument('--weight_decay', type=int, default=0.0000, metavar='N', help='weight-decay for l2 regularisation (default: 0)')
     parser.add_argument('--save-model', action='store_true', help='For saving the current model')
+    parser.add_argument('--correct_threshold', type=float, default=0.01, help='how close each output value needs to be to label to be classified as correct (default: 0.01 = within 1% as used in Rogers/McClelland 08)')
     args = parser.parse_args()
 
     # set remaining defaults
@@ -205,14 +200,14 @@ def print_progress(i, numiter):
     sys.stdout.flush()
 
 
-def log_performance(writer, epoch, train_loss, test_loss):
+def log_performance(writer, epoch, train_loss, test_loss, train_accuracy, test_accuracy):
     """ Write out the training and testing performance for this epoch to tensorboard.
           - 'writer' is a SummaryWriter instance
     """
     writer.add_scalar('Loss/train', train_loss, epoch)
     writer.add_scalar('Loss/test', test_loss, epoch)
-    #writer.add_scalar('Accuracy/train', train_accuracy, epoch)
-    #writer.add_scalar('Accuracy/test', accuracy, epoch)
+    writer.add_scalar('Accuracy/train', train_accuracy, epoch)
+    writer.add_scalar('Accuracy/test', test_accuracy, epoch)
 
 
 def get_activations(args, trained_model, test_loader):
@@ -274,7 +269,7 @@ def train_network(args, device, trainset, testset):
     writer = SummaryWriter(log_dir=const.TB_LOG_DIRECTORY + 'record_' + date + comment)
     print("Open tensorboard in another shell to monitor network training (hannahsheahan$  tensorboard --logdir=training_records/tensorboard)")
 
-    train_loss_record, test_loss_record = [[] for i in range(2)]
+    train_loss_record, test_loss_record, train_accuracy_record, test_accuracy_record = [[] for i in range(4)]
 
     print("Training network...")
     for epoch in range(1, n_epochs + 1):  # loop through the whole dataset this many times
@@ -286,15 +281,17 @@ def train_network(args, device, trainset, testset):
         test_loss, test_accuracy = test(args, model, device, testloader, criterion, printOutput)
 
         # log performance
-        log_performance(writer, epoch, train_loss, test_loss)
+        log_performance(writer, epoch, train_loss, test_loss, train_accuracy, test_accuracy)
         if epoch % args.log_interval == 0:
-            print('loss: {:.10f}'.format(train_loss))
+            print('loss: {:.10f}, accuracy: {:.2f}'.format(train_loss, train_accuracy))
             print_progress(epoch, n_epochs)
 
+        train_accuracy_record.append(train_accuracy)
+        test_accuracy_record.append(test_accuracy)
         train_loss_record.append(train_loss)
         test_loss_record.append(test_loss)
 
-    record = {"train_loss":train_loss_record, "test_loss":test_loss_record, "args":vars(args) }
+    record = {"train_loss":train_loss_record, "test_loss":test_loss_record, "train_accuracy":train_accuracy_record, "test_accuracy":test_accuracy_record, "args":vars(args) }
     randnum = str(random.randint(0,10000))
     dat = json.dumps(record)
     f = open(const.TRAININGRECORDS_DIRECTORY + randnum + date + comment + ".json","w")
