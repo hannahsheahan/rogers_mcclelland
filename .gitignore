@@ -118,6 +118,7 @@ dmypy.json
 *.npy
 results/
 datasets/
+figures/
 miscellaneous/
 training_records/
 .bash_profile
