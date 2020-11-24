@@ -74,7 +74,7 @@ def train(args, model, device, train_loader, optimizer, criterion, epoch, printO
 
         # evaluate performance
         train_loss += loss.item()
-        if np.all(np.abs(output-labels) < args.correct_threshold):
+        if np.all(np.abs((output-labels).detach().numpy()) < args.correct_threshold):
             correct += 1
 
     train_loss /= len(train_loader.dataset)
@@ -97,8 +97,7 @@ def test(args, model, device, test_loader, criterion, printOutput=True):
             output = np.squeeze(output, axis=1)
             test_loss += criterion(output, labels).item()
 
-            print(output)
-            if np.all(np.abs(output-labels) < args.correct_threshold):
+            if np.all(np.abs((output-labels).detach().numpy()) < args.correct_threshold):
                 correct += 1
 
     test_loss /= len(test_loader.dataset)
@@ -135,11 +134,15 @@ class RM_Net(nn.Module):
         self.forward(x_item, x_context)  # update the activations with the particular input
         return self.combined_activations, self.hcontext_activations, self.hitem_activations
 
-    def init_weights(m):
-        if type(m) == nn.Linear:
-            gain = 0.1  # keep initial weights small and low variance
-            torch.nn.init.xavier_uniform(m.weight, gain)
-            m.bias.data.fill_(-0.01)  # initialize to start all units 'off'
+
+def init_weights(m):
+    """Initialise network weights with custom settings.
+      - Keep gain small to ensure small and low variance weights.
+      - initialise with negative bias to start all units 'off'. """
+    if type(m) == nn.Linear:
+        gain = 0.1
+        torch.nn.init.xavier_uniform(m.weight, gain)
+        m.bias.data.fill_(-0.01)
 
 
 def define_hyperparams():
