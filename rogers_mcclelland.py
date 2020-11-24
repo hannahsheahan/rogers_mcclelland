@@ -17,6 +17,8 @@ from sklearn.cluster import AgglomerativeClustering
 import scipy.cluster.hierarchy as sch
 import torch
 from torch.utils.data import Dataset, DataLoader
+import os
+import json
 
 
 def int_to_onehot(integer, maxSize):
@@ -322,6 +324,23 @@ def analyse_network(args, trainset, testset, lookup):
             plt.savefig(const.FIGURE_DIRECTORY + layer + 'hidden_activity_RDMs_by_context'+model_name[7:-4]+'.pdf',bbox_inches='tight')
 
 
+def plot_learning_curve(args):
+    """Get the record of training and plot loss and accuracy over time."""
+    #model_name, analysis_name = net.get_model_name(args)
+
+    #record_name = '8083_23-11-20_17-13-17lr-0.05_epochs-30000.json'
+    record_name = '3953_23-11-20_10-18-41lr-0.05_epochs-30000.json'
+    with open(os.path.join(const.TRAININGRECORDS_DIRECTORY, record_name)) as record:
+        data = json.load(record)
+
+    plt.figure()
+    plt.plot(data['train_loss'])
+    plt.xlabel('epochs')
+    plt.ylabel('training loss')
+    plt.savefig(const.FIGURE_DIRECTORY + 'traintraj_' + record_name[:-5] + '.pdf', bbox_inches='tight')
+
+
+
 def main():
     # set up hyperparameter settings
     args, device = net.define_hyperparams()
@@ -340,5 +359,8 @@ def main():
 
     # analyse trained network hidden activations
     analyse_network(args, trainset, testset, lookup)
+
+    # plot training record and save it
+    #plot_learning_curve(args)
 
 main()

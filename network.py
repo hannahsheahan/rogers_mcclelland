@@ -125,15 +125,21 @@ class RM_Net(nn.Module):
         self.fc_combined_to_out = nn.Linear(self.h_combined_size, D_out)
 
     def forward(self, x_item, x_context):
-        self.fc_hitem_activations = F.relu(self.fc_item_to_hitem(x_item))
-        self.fc_hcontext_activations = F.relu(self.fc_context_to_hcontext(x_context))
-        self.fc_combined_activations = F.relu(self.fc_hitem_to_combined(self.fc_hitem_activations) + self.fc_hcontext_to_combined(self.fc_hcontext_activations))
-        self.output = torch.sigmoid(self.fc_combined_to_out(self.fc_combined_activations))
+        self.hitem_activations = F.relu(self.fc_item_to_hitem(x_item))
+        self.hcontext_activations = F.relu(self.fc_context_to_hcontext(x_context))
+        self.combined_activations = F.relu(self.fc_hitem_to_combined(self.hitem_activations) + self.fc_hcontext_to_combined(self.hcontext_activations))
+        self.output = torch.sigmoid(self.fc_combined_to_out(self.combined_activations))
         return self.output
 
     def get_activations(self, x_item, x_context):
         self.forward(x_item, x_context)  # update the activations with the particular input
-        return self.fc_combined_activations, self.fc_hcontext_activations, self.fc_hitem_activations
+        return self.combined_activations, self.hcontext_activations, self.hitem_activations
+
+    def init_weights(m):
+        if type(m) == nn.Linear:
+            gain = 0.1  # keep initial weights small and low variance
+            torch.nn.init.xavier_uniform(m.weight, gain)
+            m.bias.data.fill_(-0.01)  # initialize to start all units 'off'
 
 
 def define_hyperparams():
@@ -250,6 +256,8 @@ def train_network(args, device, trainset, testset):
 
     # Define a model for training
     model = RM_Net(args.D_item_in, args.D_context_in, args.D_out, args.D_h_item, args.D_h_context, args.D_h_combined).to(device)
+    model.apply(init_weights)
+
     #criterion = nn.MSELoss()   # mean squared error loss
     criterion = nn.BCELoss() # binary cross entropy loss
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
@@ -265,7 +273,7 @@ def train_network(args, device, trainset, testset):
     # Log the model on TensorBoard and label it with the date/time and some other naming string
     now = datetime.now()
     date = now.strftime("_%d-%m-%y_%H-%M-%S")
-    comment = "lr-{}_epochs-{}".format(args.lr, args.epochs)
+    comment = "_lr-{}_epoch-{}_hitem{}_hcxt{}_hcomb{}".format(args.lr, args.epochs, args.D_h_item, args.D_h_context, args.D_h_combined)
     writer = SummaryWriter(log_dir=const.TB_LOG_DIRECTORY + 'record_' + date + comment)
     print("Open tensorboard in another shell to monitor network training (hannahsheahan$  tensorboard --logdir=training_records/tensorboard)")
 
@@ -302,7 +310,7 @@ def train_network(args, device, trainset, testset):
     print("Training complete.")
 
     print('\nSaving trained model...')
-    print(model_name)
+    print(str(randnum) + '_' + model_name)
     torch.save(model, model_name)
 
     return model
