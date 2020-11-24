@@ -74,7 +74,7 @@ def train(args, model, device, train_loader, optimizer, criterion, epoch, printO
 
         # evaluate performance
         train_loss += loss.item()
-        if np.all(np.abs((output-labels).detach().numpy()) < args.correct_threshold):
+        if (torch.abs(output-labels) < args.correct_threshold).all():
             correct += 1
 
     train_loss /= len(train_loader.dataset)
@@ -97,7 +97,7 @@ def test(args, model, device, test_loader, criterion, printOutput=True):
             output = np.squeeze(output, axis=1)
             test_loss += criterion(output, labels).item()
 
-            if np.all(np.abs((output-labels).detach().numpy()) < args.correct_threshold):
+            if (torch.abs(output-labels) < args.correct_threshold).all():
                 correct += 1
 
     test_loss /= len(test_loader.dataset)
