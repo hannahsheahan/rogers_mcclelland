@@ -321,7 +321,7 @@ def analyse_network(args, trainset, testset, lookup):
                 plt.xlabel('items x domains')
                 plt.ylabel('items x domains')
 
-            plt.savefig(const.FIGURE_DIRECTORY + layer + 'hidden_activity_RDMs_by_context'+model_name[7:-4]+'.pdf',bbox_inches='tight')
+            plt.savefig(const.FIGURE_DIRECTORY + layer + 'hidden_activity_RDMs_by_context_'+model_name[7:-4]+'.pdf',bbox_inches='tight')
 
 
 def plot_learning_curve(args):
@@ -355,8 +355,8 @@ def main():
     testset = net.CreateDataset(dataset)  # HRS note that, for now, train and test are same dataset. As in Rogers/McClelland
 
     # train and test network
-    model = net.train_network(args, device, trainset, testset)
-
+    model, id = net.train_network(args, device, trainset, testset)
+    args.id = id
     # analyse trained network hidden activations
     analyse_network(args, trainset, testset, lookup)
 

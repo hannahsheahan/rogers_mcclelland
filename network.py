@@ -78,7 +78,7 @@ def train(args, model, device, train_loader, optimizer, criterion, epoch, printO
             correct += 1
 
     train_loss /= len(train_loader.dataset)
-    accuracy = correct / len(train_loader.dataset)
+    accuracy = (correct / len(train_loader.dataset)) * 100
     return train_loss, accuracy
 
 
@@ -101,7 +101,7 @@ def test(args, model, device, test_loader, criterion, printOutput=True):
                 correct += 1
 
     test_loss /= len(test_loader.dataset)
-    accuracy = correct / len(test_loader.dataset)
+    accuracy = (correct / len(test_loader.dataset)) * 100
     if printOutput:
         print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(test_loss, correct, len(test_loader.dataset), accuracy))
     return test_loss, accuracy
@@ -142,7 +142,7 @@ def init_weights(m):
     if type(m) == nn.Linear:
         gain = 0.1
         torch.nn.init.xavier_uniform(m.weight, gain)
-        m.bias.data.fill_(-0.01)
+        #m.bias.data.fill_(-0.01)
 
 
 def define_hyperparams():
@@ -173,9 +173,9 @@ def define_hyperparams():
     parser.add_argument('--n_attributes', default=15, type=int, help='number of attributes (default: 15)')     # True: task is like Fabrice's with filler trials; False: solely compare trials
 
     # network architecture
-    parser.add_argument('--D_h_item', type=int, default=100, help='hidden size for hidden item representation (default: 100)')
-    parser.add_argument('--D_h_context', type=int, default=100, help='hidden size for hidden context representation (default: 100)')
-    parser.add_argument('--D_h_combined', type=int, default=200, help='hidden size for hidden combined representation (default: 200)')
+    parser.add_argument('--D_h_item', type=int, default=1000, help='hidden size for hidden item representation (default: 100)')
+    parser.add_argument('--D_h_context', type=int, default=1000, help='hidden size for hidden context representation (default: 100)')
+    parser.add_argument('--D_h_combined', type=int, default=1500, help='hidden size for hidden combined representation (default: 200)')
 
     # network training hyperparameters
     parser.add_argument('--batch-size', type=int, default=1, metavar='N', help='input batch size for training (default: 1)')
@@ -242,8 +242,8 @@ def get_activations(args, trained_model, test_loader):
 def get_model_name(args):
     """Determine the correct name for the model and analysis files."""
     hiddensizes = '_' + str(args.D_h_item) + '_' + str(args.D_h_context) + '_' + str(args.D_h_combined)
-    model_name = const.MODEL_DIRECTORY + 'rogers_mcclelland_model' + hiddensizes + '.pth'
-    analysis_name = const.ANALYSIS_DIRECTORY + 'rogers_mcclelland_model_analysis' + hiddensizes + '.npy'
+    model_name = const.MODEL_DIRECTORY + str(args.id) + '_model' + hiddensizes + '.pth'
+    analysis_name = const.ANALYSIS_DIRECTORY + str(args.id) + '_model_analysis' + hiddensizes + '.npy'
     return model_name, analysis_name
 
 
@@ -251,7 +251,6 @@ def train_network(args, device, trainset, testset):
     """
     This function performs the train/test loop for training the Rogers/McClelland '08 analogy model
     """
-    model_name, _ = get_model_name(args)
 
     print("Network training conditions: ")
     print(args)
@@ -294,7 +293,7 @@ def train_network(args, device, trainset, testset):
         # log performance
         log_performance(writer, epoch, train_loss, test_loss, train_accuracy, test_accuracy)
         if epoch % args.log_interval == 0:
-            print('loss: {:.10f}, accuracy: {:.2f}'.format(train_loss, train_accuracy))
+            print('loss: {:.10f}, accuracy: {:.1f}%'.format(train_loss, train_accuracy))
             print_progress(epoch, n_epochs)
 
         train_accuracy_record.append(train_accuracy)
@@ -304,6 +303,8 @@ def train_network(args, device, trainset, testset):
 
     record = {"train_loss":train_loss_record, "test_loss":test_loss_record, "train_accuracy":train_accuracy_record, "test_accuracy":test_accuracy_record, "args":vars(args) }
     randnum = str(random.randint(0,10000))
+    args.id = randnum
+    model_name, _ = get_model_name(args)
     dat = json.dumps(record)
     f = open(const.TRAININGRECORDS_DIRECTORY + randnum + date + comment + ".json","w")
     f.write(dat)
@@ -313,7 +314,7 @@ def train_network(args, device, trainset, testset):
     print("Training complete.")
 
     print('\nSaving trained model...')
-    print(str(randnum) + '_' + model_name)
+    print(model_name)
     torch.save(model, model_name)
 
-    return model
+    return model, randnum
