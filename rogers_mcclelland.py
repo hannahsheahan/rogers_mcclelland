@@ -8,6 +8,7 @@ Issues: N/A
 # ---------------------------------------------------------------------------- #
 import numpy as np
 import sys
+from config import get_config
 import network as net
 import matplotlib.pyplot as plt
 import scipy.io as spio
@@ -342,8 +343,7 @@ def plot_learning_curve(args):
 
 
 def main():
-    # set up hyperparameter settings
-    args, device = net.define_hyperparams()
+    args, device = get_config()
 
     # load in the inputs and outputs I built in matlab (before realising I really want to train this in pytorch)
     lookup, inputs, words = setup_inputs(args)
