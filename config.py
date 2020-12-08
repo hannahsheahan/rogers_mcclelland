@@ -27,24 +27,25 @@ def parse_config():
     kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
 
     parser = argparse.ArgumentParser(description='PyTorch network settings')
-    parser.add_argument('--model-type', default='linearsigmoid-wgain1.0', help='string type label for model (default: "none")')
+    parser.add_argument('--model-type', default='relusigmoid-wgain0.01', help='string type label for model (default: "none")')
 
     # task config
     parser.add_argument('--n_items', default=8, type=int, help='number of input items (default: 8)')
     parser.add_argument('--n_contexts', default=2, type=int, help='number of context inputs (default: 2)')
-    parser.add_argument('--n_domains', default=3,  type=int, help='number of domains (default: 3)')
+    parser.add_argument('--n_domains', default=4,  type=int, help='number of domains (default: 3)')
     parser.add_argument('--n_attributes', default=15, type=int, help='number of attributes (default: 15)')     # True: task is like Fabrice's with filler trials; False: solely compare trials
 
     # network architecture
-    parser.add_argument('--D_h_item', type=int, default=1500, help='hidden size for hidden item representation (default: 100)')
-    parser.add_argument('--D_h_context', type=int, default=1500, help='hidden size for hidden context representation (default: 100)')
-    parser.add_argument('--D_h_combined', type=int, default=2000, help='hidden size for hidden combined representation (default: 200)')
+    parser.add_argument('--D_h_item', type=int, default=16, help='hidden size for hidden item representation (default: 16)')
+    parser.add_argument('--D_h_context', type=int, default=16, help='hidden size for hidden context representation (default: 16)')
+    parser.add_argument('--D_h_combined', type=int, default=32, help='hidden size for hidden combined representation (default: 32)')
 
     # network training hyperparameters
+    parser.add_argument('--weight-gain', type=float, default=1.0, help='gain on scale of weight initialisation (default: 1.0)')
     parser.add_argument('--batch-size', type=int, default=1, metavar='N', help='input batch size for training (default: 1)')
     parser.add_argument('--test-batch-size', type=int, default=1, metavar='N', help='input batch size for testing (default: 1)')
     parser.add_argument('--epochs', type=int, default=30000, metavar='N', help='number of epochs to train (default: 30,000 as used in Rogers/McClelland 08)')
-    parser.add_argument('--lr', type=float, default=0.05, metavar='LR', help='learning rate (default: 0.05 as used in Rogers/McClelland 08)')
+    parser.add_argument('--lr', type=float, default=0.01, metavar='LR', help='learning rate (default: 0.01 as used in Rogers/McClelland 08)')
     parser.add_argument('--momentum', type=float, default=0.9, metavar='M', help='SGD momentum (default: 0.9)')
     parser.add_argument('--no-cuda', action='store_true', help='disables CUDA training')
     parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')

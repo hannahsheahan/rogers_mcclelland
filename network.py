@@ -131,16 +131,16 @@ class RM_Net(nn.Module):
         #self.output = F.relu(self.fc_combined_to_out(self.combined_activations))
 
         # alternative linear + sigmoid at end case (use with BCE loss)
-        self.hitem_activations = self.fc_item_to_hitem(x_item)
-        self.hcontext_activations = self.fc_context_to_hcontext(x_context)
-        self.combined_activations = self.fc_hitem_to_combined(self.hitem_activations) + self.fc_hcontext_to_combined(self.hcontext_activations)
-        self.output = torch.sigmoid(self.fc_combined_to_out(self.combined_activations))
+        #self.hitem_activations = self.fc_item_to_hitem(x_item)
+        #self.hcontext_activations = self.fc_context_to_hcontext(x_context)
+        #self.combined_activations = self.fc_hitem_to_combined(self.hitem_activations) + self.fc_hcontext_to_combined(self.hcontext_activations)
+        #self.output = torch.sigmoid(self.fc_combined_to_out(self.combined_activations))
 
         # alternative relu + sigmoid on final layer (use with BCE loss)
-        #self.hitem_activations = F.relu(self.fc_item_to_hitem(x_item))
-        #self.hcontext_activations = F.relu(self.fc_context_to_hcontext(x_context))
-        #self.combined_activations = F.relu(self.fc_hitem_to_combined(self.hitem_activations) + self.fc_hcontext_to_combined(self.hcontext_activations))
-        #self.output = torch.sigmoid(self.fc_combined_to_out(self.combined_activations))
+        self.hitem_activations = F.relu(self.fc_item_to_hitem(x_item))
+        self.hcontext_activations = F.relu(self.fc_context_to_hcontext(x_context))
+        self.combined_activations = F.relu(self.fc_hitem_to_combined(self.hitem_activations) + self.fc_hcontext_to_combined(self.hcontext_activations))
+        self.output = torch.sigmoid(self.fc_combined_to_out(self.combined_activations))
 
         return self.output
 
@@ -154,7 +154,7 @@ def init_weights(m):
       - Keep gain small to ensure small and low variance weights.
       """
     if type(m) == nn.Linear:
-        gain = 1.0
+        gain = 0.01
         torch.nn.init.xavier_uniform(m.weight, gain)
 
 

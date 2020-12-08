@@ -20,6 +20,9 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 import os
 import json
+import matplotlib.patches as patches
+from matplotlib.image import BboxImage
+from matplotlib.transforms import Bbox, TransformedBbox
 
 
 def int_to_onehot(integer, maxSize):
@@ -56,6 +59,28 @@ def make_hierarchy(n_items,n_attributes):
     return cov
 
 
+def make_unbalanced_hierarchy(n_items,n_attributes):
+    """Construct covariance between items and attributes within a given domain.
+    i.e. a context correlation structure.
+    - Note HRS have totally hacked/hardcoded the hierarchy.
+    - make the hierarchy asymmetric in orde to replicate Rogers/McClelland '08
+    """
+    cov = np.zeros((n_attributes, n_items))
+    i = 1
+    j = n_items // 2
+
+    start_ind = [0,0,0,4,4,0,1,2,3,4,5,6,7,6,7] # HRS hack
+    stop_ind = [7,3,3,7,5,0,1,2,3,4,5,6,7,6,7] # HRS hack
+    count = 0
+    for ind in range(len(start_ind)):
+        i = start_ind[ind]
+        j = stop_ind[ind]+1
+        cov[count,i:j] = 1
+        count +=1
+
+    return cov
+
+
 def make_magnitude(n_items, n_attributes):
     """Produce a magnitude covariance matrix that shows how attributes can
      encode the similarity relations between items."""
@@ -83,11 +108,12 @@ def setup_inputs(args):
     max_contextsize = args.n_contexts*args.n_domains
 
     # id/words for each input
-    all_domain_words = ['company','mammals','monarchy']
-    all_context_words = ['human size','popularity','number of teeth', 'dietary preferences', 'friendliness', 'dog common ancestry']
+    all_domain_words = ['company','mammals','monarchy', 'fourthone']
+    all_context_words = ['human size','popularity','number of teeth', 'dietary preferences', 'friendliness', 'dog common ancestry','conA','conB']
     all_item_words = [ 'katie','michael','teresa','taika','Mr Perez','Ms Que','Mrs Wellie','Mr X', \
                         'lion','elephant','monkey','mouse','sheep','ferret','gazelle','pig', \
-                        'chow chow','alaskan malamute','siberian husky','saluki','basenji','grey wolf','shar pei','akita inu']
+                        'chow chow','alaskan malamute','siberian husky','saluki','basenji','grey wolf','shar pei','akita inu',\
+                        '1','2','3','4','5','6','7','8']
 
     # cycle through all possible inputs
     # preallocate space
@@ -154,9 +180,9 @@ def setup_outputs(args, lookup):
     - There are [n_attributes x n_domains x n_contexts]  outputs in total, so 15 for each
      context in each domain, and each item activates some subset of these."""
 
-    context_cov_A = make_hierarchy(args.n_items, args.n_attributes);  # HRS note this is hacked together for now
+    context_cov_A = make_unbalanced_hierarchy(args.n_items, args.n_attributes);  # HRS note this is hacked together for now
     #context_cov_B = make_magnitude(args.n_items, args.n_attributes);
-    context_cov_B = make_hierarchy(args.n_items, args.n_attributes);
+    context_cov_B = make_unbalanced_hierarchy(args.n_items, args.n_attributes);
     context_covs = [context_cov_A, context_cov_B]
 
     plt.figure()
@@ -242,16 +268,54 @@ def plot_output_rdm(args, attributes, lookup):
     return total_attribute_activity
 
 
-def plot_hierarchical_cluster(total_attribute_activity):
+def plot_hierarchical_cluster(total_attribute_activity, figure_modifier='Outputs'):
     """ Hierarchical cluster analysis of outputs (R3.B)"""
 
     total_attribute_activity = np.mean(total_attribute_activity,0)
-    plt.figure()
+    plt.figure(figsize=(8, 4))
+    ax = plt.gca()
     dendrogram = sch.dendrogram(sch.linkage(total_attribute_activity, method='single'))
+    yscale = np.max(np.asarray(dendrogram['dcoord']))
     plt.title('Hierarchical cluster analysis of output activity')
-    plt.xlabel('items x domains')
+    plt.xlabel('\nitems x domains')
     plt.ylabel('Euclidean distance')
-    plt.savefig(const.FIGURE_DIRECTORY + 'Outputs_hierarchical_cluster_analysis.pdf',bbox_inches='tight')
+    xticks_to_icons(ax, yscale)
+    plt.savefig(const.FIGURE_DIRECTORY + figure_modifier + '_hierarchical_cluster_analysis.pdf',bbox_inches='tight')
+
+
+def xticks_to_icons(ax, yscale):
+    """A mapping function that will replace particular xtick values with images of particular symbols"""
+    # set ticks where your images will be
+    xloc, labels = plt.xticks()
+    yloc, ylabels = plt.yticks()
+    labels = [int(label.get_text()) for label in labels]
+    TICKYPOS = -yscale/10
+
+    # remove numeric tick labels
+    #ax.get_xaxis().set_ticklabels([])
+
+    # mapping from item number to icon label
+    icons_map = {label:'blank' for label in labels}
+    domain_colours = ['black', 'darkgrey', 'lightgrey', 'white']
+    for domain in range(len(domain_colours)):
+        for i in range(domain*8, domain*8+4):
+            icons_map[i] = domain_colours[domain] + '-circle'
+        for i in range(domain*8+4,domain*8+6):
+            icons_map[i] = domain_colours[domain] + '-square'
+        for i in range(domain*8+6,domain*8+8):
+            icons_map[i] = domain_colours[domain] + '-star'
+
+    # insert icons on xaxis
+    for i,x in enumerate(xloc):
+        x = x-26 -0.28*x  # hack to fit x-axis
+        lowerCorner = ax.transData.transform((x-2.5,TICKYPOS+yscale/40))
+        upperCorner = ax.transData.transform((x+2.5,TICKYPOS+yscale/20))
+
+        bbox_image = BboxImage(Bbox([lowerCorner, upperCorner]), norm=None, origin=None, clip_on=False)
+        icon = icons_map[labels[i]] + '.png'
+
+        bbox_image.set_data(plt.imread(os.path.join(const.ICONS_DIRECTORY,icon)))
+        ax.add_artist(bbox_image)
 
 
 def analyse_network(args, trainset, testset, lookup):
@@ -279,7 +343,7 @@ def analyse_network(args, trainset, testset, lookup):
 
         item_activations, context_activations, combined_activations = all_activations
         layers = ['items','contexts','combined']
-        context_texts = ['hierarchy','magnitude']
+        context_texts = ['hierarchy','hierarchy']
         hidden_sizes = [args.D_h_item, args.D_h_context, args.D_h_combined]
 
         # combined layer for now
@@ -324,6 +388,16 @@ def analyse_network(args, trainset, testset, lookup):
 
             plt.savefig(const.FIGURE_DIRECTORY + layer + 'hidden_activity_RDMs_by_context_'+model_name[7:-4]+'.pdf',bbox_inches='tight')
 
+            plt.figure()
+            mean_total_hidden_distance = np.mean(total_hidden_distance,0)
+            plt.imshow(mean_total_hidden_distance)
+            plt.colorbar
+            plt.title(layer + 'hidden RDM: both contexts')
+            plt.xlabel('items x domains')
+            plt.ylabel('items x domains')
+            plt.savefig(const.FIGURE_DIRECTORY + layer + 'hidden_activity_RDMs_meancontext_'+model_name[7:-4]+'.pdf',bbox_inches='tight')
+
+            plot_hierarchical_cluster(total_hidden_distance, 'hiddencombined')
 
 def plot_learning_curve(args):
     """Get the record of training and plot loss and accuracy over time."""
@@ -355,8 +429,8 @@ def main():
     testset = net.CreateDataset(dataset)  # HRS note that, for now, train and test are same dataset. As in Rogers/McClelland
 
     # train and test network
-    model, id = net.train_network(args, device, trainset, testset)
-    args.id = id
+    #model, id = net.train_network(args, device, trainset, testset)
+    args.id = 8394
     # analyse trained network hidden activations
     analyse_network(args, trainset, testset, lookup)
 
