@@ -81,6 +81,27 @@ def make_unbalanced_hierarchy(n_items,n_attributes):
     return cov
 
 
+def make_context2_struct(n_items,n_attributes):
+    """Construct covariance between items and attributes within a given domain.
+    i.e. a context correlation structure.
+    - make the hierarchy asymmetric in orde to replicate Rogers/McClelland '08
+    """
+    cov = np.zeros((n_attributes, n_items))
+    i = 1
+    j = n_items // 2
+
+    start_ind = [0,0,4,4,0,1,2,3,6,7,6,7] # HRS hack
+    stop_ind = [7,3,5,5,0,1,2,3,6,7,6,7] # HRS hack
+    count = 0
+    for ind in range(len(start_ind)):
+        i = start_ind[ind]
+        j = stop_ind[ind]+1
+        cov[count,i:j] = 1
+        count +=1
+
+    return cov
+
+
 def make_magnitude(n_items, n_attributes):
     """Produce a magnitude covariance matrix that shows how attributes can
      encode the similarity relations between items."""
@@ -100,10 +121,10 @@ def make_magnitude(n_items, n_attributes):
 
 
 def setup_inputs(args):
-    """ Setup inputs and attributes."""
+    """ Setup inputs and attributes.
+    - On each trial we have both one-hot context input and one-hot item input
+      each item 1:8 will be assessed in each of 4 different contexts."""
 
-    # on each trial we have both one-hot context input and one-hot item input
-    # each item 1:8 will be assessed in each of 4 different contexts
     max_itemsize = args.n_items*args.n_domains
     max_contextsize = args.n_contexts*args.n_domains
 
@@ -182,7 +203,7 @@ def setup_outputs(args, lookup):
 
     context_cov_A = make_unbalanced_hierarchy(args.n_items, args.n_attributes);  # HRS note this is hacked together for now
     #context_cov_B = make_magnitude(args.n_items, args.n_attributes);
-    context_cov_B = make_unbalanced_hierarchy(args.n_items, args.n_attributes);
+    context_cov_B = make_context2_struct(args.n_items, args.n_attributes);
     context_covs = [context_cov_A, context_cov_B]
 
     plt.figure()
@@ -193,7 +214,7 @@ def setup_outputs(args, lookup):
     plt.ylabel('attribute #')
     plt.subplot(1,2,2)
     plt.imshow(context_cov_B)
-    plt.title('magnitude context')
+    plt.title('other context')
     plt.xlabel('item #')
     plt.ylabel('attribute #')
     plt.savefig(const.FIGURE_DIRECTORY + 'Item_attribute_covariance.pdf',bbox_inches='tight')
@@ -284,10 +305,10 @@ def plot_hierarchical_cluster(total_attribute_activity, figure_modifier='Outputs
 
 
 def xticks_to_icons(ax, yscale):
-    """A mapping function that will replace particular xtick values with images of particular symbols"""
+    """A mapping function that will replace particular xtick values with images of particular symbols.
+    - uses same symbols as in 2008 Rogers/McClelland."""
     # set ticks where your images will be
     xloc, labels = plt.xticks()
-    yloc, ylabels = plt.yticks()
     labels = [int(label.get_text()) for label in labels]
     TICKYPOS = -yscale/10
 
@@ -318,10 +339,23 @@ def xticks_to_icons(ax, yscale):
         ax.add_artist(bbox_image)
 
 
+def plot_learning_curve(record_name):
+    """Get the record of training and plot loss and accuracy over time."""
+
+    with open(os.path.join(const.TRAININGRECORDS_DIRECTORY, record_name)) as record:
+        data = json.load(record)
+
+    plt.figure()
+    plt.plot(data['train_loss'])
+    plt.xlabel('epochs')
+    plt.ylabel('training loss')
+    plt.savefig(const.FIGURE_DIRECTORY + 'traintraj_' + record_name[:-5] + '.pdf', bbox_inches='tight')
+
+
 def analyse_network(args, trainset, testset, lookup):
     """Analyse the hidden unit activations for each unique input in each context.
     """
-    model_name, analysis_name = net.get_model_name(args)
+    model_name, analysis_name, record_name = net.get_model_name(args)
 
     # load an existing dataset
     try:
@@ -334,6 +368,9 @@ def analyse_network(args, trainset, testset, lookup):
         print('\nAnalysing trained network...')
 
     if not preanalysed:
+        # plot training record and save it
+        plot_learning_curve(record_name)
+
         # load the trained model and the datasets it was trained/tested on
         trained_model = torch.load(model_name)
 
@@ -399,21 +436,6 @@ def analyse_network(args, trainset, testset, lookup):
 
             plot_hierarchical_cluster(total_hidden_distance, 'hiddencombined')
 
-def plot_learning_curve(args):
-    """Get the record of training and plot loss and accuracy over time."""
-    #model_name, analysis_name = net.get_model_name(args)
-
-    #record_name = '8083_23-11-20_17-13-17lr-0.05_epochs-30000.json'
-    record_name = '3953_23-11-20_10-18-41lr-0.05_epochs-30000.json'
-    with open(os.path.join(const.TRAININGRECORDS_DIRECTORY, record_name)) as record:
-        data = json.load(record)
-
-    plt.figure()
-    plt.plot(data['train_loss'])
-    plt.xlabel('epochs')
-    plt.ylabel('training loss')
-    plt.savefig(const.FIGURE_DIRECTORY + 'traintraj_' + record_name[:-5] + '.pdf', bbox_inches='tight')
-
 
 
 def main():
@@ -430,11 +452,9 @@ def main():
 
     # train and test network
     #model, id = net.train_network(args, device, trainset, testset)
-    args.id = 8394
-    # analyse trained network hidden activations
+    args.id = 3544
+    # analyse trained network hidden activations and training trajectory
     analyse_network(args, trainset, testset, lookup)
 
-    # plot training record and save it
-    #plot_learning_curve(args)
 
 main()

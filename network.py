@@ -18,6 +18,7 @@ from torch.utils.tensorboard import SummaryWriter
 import json
 import random
 from datetime import datetime
+import os
 
 
 class CreateDataset(Dataset):
@@ -197,11 +198,21 @@ def get_activations(args, trained_model, test_loader):
 
 
 def get_model_name(args):
-    """Determine the correct name for the model and analysis files."""
+    """Determine the correct name for the model, analysis files and training record."""
     hiddensizes = '_' + str(args.D_h_item) + '_' + str(args.D_h_context) + '_' + str(args.D_h_combined)
     model_name = const.MODEL_DIRECTORY + str(args.id) + '_model' + hiddensizes + '.pth'
     analysis_name = const.ANALYSIS_DIRECTORY + str(args.id) + '_model_analysis' + hiddensizes + '.npy'
-    return model_name, analysis_name
+
+    # retrieve training record
+    records = [f for f in os.listdir(const.TRAININGRECORDS_DIRECTORY) if os.path.isfile(os.path.join(const.TRAININGRECORDS_DIRECTORY, f))]
+    record_name = ''
+    for file in records:
+        if str(args.id)+'_' in file:
+            record_name = file
+    if record_name=='':
+        print('Warning: training record: ' + record_name + 'not found.')
+
+    return model_name, analysis_name, record_name
 
 
 def train_network(args, device, trainset, testset):
