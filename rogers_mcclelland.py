@@ -451,8 +451,9 @@ def main():
     testset = net.CreateDataset(dataset)  # HRS note that, for now, train and test are same dataset. As in Rogers/McClelland
 
     # train and test network
-    #model, id = net.train_network(args, device, trainset, testset)
-    args.id = 3544
+    model, id = net.train_network(args, device, trainset, testset)
+    args.id = id
+
     # analyse trained network hidden activations and training trajectory
     analyse_network(args, trainset, testset, lookup)
 

@@ -155,7 +155,7 @@ def init_weights(m):
       - Keep gain small to ensure small and low variance weights.
       """
     if type(m) == nn.Linear:
-        gain = 0.01
+        gain = 0.005
         torch.nn.init.xavier_uniform(m.weight, gain)
 
 
@@ -272,7 +272,6 @@ def train_network(args, device, trainset, testset):
     record = {"train_loss":train_loss_record, "test_loss":test_loss_record, "train_accuracy":train_accuracy_record, "test_accuracy":test_accuracy_record, "args":vars(args) }
     randnum = str(random.randint(0,10000))
     args.id = randnum
-    model_name, _ = get_model_name(args)
     dat = json.dumps(record)
     f = open(const.TRAININGRECORDS_DIRECTORY + randnum + date + comment + ".json","w")
     f.write(dat)
@@ -282,6 +281,7 @@ def train_network(args, device, trainset, testset):
     print("Training complete.")
 
     print('\nSaving trained model...')
+    model_name, _, _ = get_model_name(args)
     print(model_name)
     torch.save(model, model_name)
 
