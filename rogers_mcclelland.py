@@ -441,11 +441,11 @@ def analyse_network(args, trainset, testset, lookup):
 def main():
     args, device = get_config()
 
-    # load in the inputs and outputs I built in matlab (before realising I really want to train this in pytorch)
+    # set up the task
     lookup, inputs, words = setup_inputs(args)
     attributes = setup_outputs(args, lookup)
 
-    # define train and test sets using our Dataset-inherited class
+    # define train and test sets
     dataset = {'index':list(range(args.n_unique)),'input_item':inputs[0],'input_context':inputs[1],'label':attributes, 'words':words, 'domains':inputs[2]}
     trainset = net.CreateDataset(dataset)
     testset = net.CreateDataset(dataset)  # HRS note that, for now, train and test are same dataset. As in Rogers/McClelland
