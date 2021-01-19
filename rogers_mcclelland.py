@@ -8,7 +8,7 @@ Issues: N/A
 # ---------------------------------------------------------------------------- #
 import numpy as np
 import sys
-from config import get_config
+
 import network as net
 import matplotlib.pyplot as plt
 import scipy.io as spio
@@ -41,14 +41,13 @@ def onehot_to_int(onehot):
 def make_hierarchy(n_items,n_attributes):
     """Construct covariance between items and attributes within a given domain.
     i.e. a context correlation structure.
-    - Note HRS have totally hacked/hardcoded the hierarchy.
     """
     cov = np.zeros((n_attributes, n_items))
     i = 1
     j = n_items // 2
 
-    start_ind = [0,0,4,0,2,4,6,0,1,2,3,4,5,6,7] # HRS hack
-    stop_ind = [7,3,7,1,3,5,7,0,1,2,3,4,5,6,7] # HRS hack
+    start_ind = [0,0,4,0,2,4,6,0,1,2,3,4,5,6,7]
+    stop_ind = [7,3,7,1,3,5,7,0,1,2,3,4,5,6,7]
     count = 0
     for ind in range(n_attributes):
         i = start_ind[ind]
@@ -62,15 +61,14 @@ def make_hierarchy(n_items,n_attributes):
 def make_unbalanced_hierarchy(n_items,n_attributes):
     """Construct covariance between items and attributes within a given domain.
     i.e. a context correlation structure.
-    - Note HRS have totally hacked/hardcoded the hierarchy.
     - make the hierarchy asymmetric in orde to replicate Rogers/McClelland '08
     """
     cov = np.zeros((n_attributes, n_items))
     i = 1
     j = n_items // 2
 
-    start_ind = [0,0,0,4,4,0,1,2,3,4,5,6,7,6,7] # HRS hack
-    stop_ind = [7,3,3,7,5,0,1,2,3,4,5,6,7,6,7] # HRS hack
+    start_ind = [0,0,0,4,4,0,1,2,3,4,5,6,7,6,7]
+    stop_ind = [7,3,3,7,5,0,1,2,3,4,5,6,7,6,7]
     count = 0
     for ind in range(len(start_ind)):
         i = start_ind[ind]
@@ -84,14 +82,14 @@ def make_unbalanced_hierarchy(n_items,n_attributes):
 def make_context2_struct(n_items,n_attributes):
     """Construct covariance between items and attributes within a given domain.
     i.e. a context correlation structure.
-    - make the hierarchy asymmetric in orde to replicate Rogers/McClelland '08
+    - make the hierarchy asymmetric in order to replicate Rogers/McClelland '08
     """
     cov = np.zeros((n_attributes, n_items))
     i = 1
     j = n_items // 2
 
-    start_ind = [0,0,4,4,0,1,2,3,6,7,6,7] # HRS hack
-    stop_ind = [7,3,5,5,0,1,2,3,6,7,6,7] # HRS hack
+    start_ind = [0,0,4,4,0,1,2,3,6,7,6,7]
+    stop_ind = [7,3,5,5,0,1,2,3,6,7,6,7]
     count = 0
     for ind in range(len(start_ind)):
         i = start_ind[ind]
@@ -105,7 +103,6 @@ def make_context2_struct(n_items,n_attributes):
 def make_magnitude(n_items, n_attributes):
     """Produce a magnitude covariance matrix that shows how attributes can
      encode the similarity relations between items."""
-
     cov = np.zeros((n_attributes, n_items))
     j = n_items // 2
     stop_ind = list(range(n_items,-1,-1))
@@ -120,17 +117,111 @@ def make_magnitude(n_items, n_attributes):
     return cov
 
 
-def setup_inputs(args):
+def make_rm_structA(n_items, n_attributes):
+    """Structure taken from Rogers/McClelland .csv file sent via email."""
+    if n_items != 8 or n_attributes != 14:
+        print('Warning: the number of items and attributes specified in config are inconsistent with Rogers/McClelland 08 setup. \
+            Requires 8 items and 14 attributes for the context structures. Exiting.')
+        sys.exit()
+
+    cov = [ [1,	1,	1,	1,	0,	0,	1,	1,	1,	1,	0,	0,	0,	0],
+            [1,	1,	1,	1,	0,	0,	1,	1,	1,	1,	0,	0,	0,	0],
+            [1,	1,	1,	1,	0,	0,	1,	1,	1,	1,	0,	0,	0,	0],
+            [1,	1,	1,	1,	0,	0,	1,	1,	1,	1,	0,	0,	0,	0],
+            [1,	1,	0,	0,	1,	1,	1,	0,	0,	0,	1,	1,	0,	0],
+            [1,	1,	0,	0,	1,	1,	0,	1,	0,	0,	1,	1,	0,	0],
+            [1,	1,	0,	0,	1,	1,	0,	0,	1,	0,	1,	1,	1,	0],
+            [1,	1,	0,	0,	1,	1,	0,	0,	0,	1,	1,	1,	0,	1]]
+    cov = np.asarray(cov).T
+    print('\nContext structure A:')
+    print(cov)
+    return cov
+
+
+def make_rm_structB(n_items, n_attributes):
+    """Structure taken from Rogers/McClelland .csv file sent via email."""
+    if n_items != 8 or n_attributes != 14:
+        print('Warning: the number of items and attributes specified in config are inconsistent with Rogers/McClelland 08 setup. \
+            Requires 8 items and 14 attributes for the context structures. Exiting.')
+        sys.exit()
+
+    cov = [ [1,	0,	1,	1,	0,	0,	1,	1,	1,	1,	0,	0,	0,	0],
+            [1,	0,	1,	1,	0,	0,	1,	1,	1,	1,	0,	0,	0,	0],
+            [1,	0,	1,	1,	0,	0,	1,	1,	1,	1,	0,	0,	0,	0],
+            [1,	0,	1,	1,	0,	0,	1,	1,	1,	1,	0,	0,	0,	0],
+            [0,	1,	0,	0,	1,	1,	0,	0,	0,	0,	1,	1,	0,	0],
+            [0,	1,	0,	0,	1,	1,	0,	0,	0,	0,	1,	1,	0,	0],
+            [0,	1,	0,	0,	1,	1,	0,	0,	0,	0,	0,	1,	0,	0],
+            [0,	1,	0,	0,	1,	1,	0,	0,	0,	0,	1,	0,	0,	0]]
+    cov = np.asarray(cov).T
+    print('\nContext structure B:')
+    print(cov)
+    return cov
+
+
+def make_rm_structC(n_items, n_attributes):
+    """Structure taken from Rogers/McClelland .csv file sent via email."""
+    if n_items != 8 or n_attributes != 14:
+        print('Warning: the number of items and attributes specified in config are inconsistent with Rogers/McClelland 08 setup. \
+            Requires 8 items and 14 attributes for the context structures. Exiting.')
+        sys.exit()
+
+    cov = [ [1,	1,	1,	1,	0,	0,	1,	1,	0,	1,	0,	0,	0,	0],
+            [1,	1,	1,	1,	0,	0,	1,	1,	1,	0,	0,	0,	0,	0],
+            [1,	1,	1,	1,	0,	0,	1,	1,	1,	0,	0,	0,	0,	0],
+            [1,	1,	1,	1,	0,	0,	1,	1,	0,	1,	0,	0,	0,	0],
+            [1,	1,	0,	0,	1,	1,	1,	0,	0,	0,	1,	1,	0,	0],
+            [1,	1,	0,	0,	1,	1,	1,	0,	0,	0,	1,	1,	0,	0],
+            [1,	1,	0,	0,	1,	0,	0,	0,	1,	0,	1,	1,	1,	1],
+            [1,	1,	0,	0,	1,	1,	0,	0,	1,	0,	1,	1,	1,	1]]
+    cov = np.asarray(cov).T
+    print('\nContext structure C:')
+    print(cov)
+    return cov
+
+
+def make_rm_structD(n_items, n_attributes):
+    """Structure taken from Rogers/McClelland .csv file sent via email."""
+    if n_items != 8 or n_attributes != 14:
+        print('Warning: the number of items and attributes specified in config are inconsistent with Rogers/McClelland 08 setup. \
+            Requires 8 items and 14 attributes for the context structures. Exiting.')
+        sys.exit()
+
+    cov = [ [1,	0,	1,	1,	0,	0,	1,	0,	1,	0,	0,	0,	0,	0],
+            [1,	0,	1,	1,	0,	0,	1,	0,	0,	1,	0,	0,	0,	0],
+            [1,	0,	1,	1,	0,	0,	0,	1,	1,	0,	0,	0,	0,	0],
+            [1,	0,	1,	1,	0,	0,	0,	1,	0,	1,	0,	0,	0,	0],
+            [1,	1,	0,	0,	1,	1,	0,	0,	0,	0,	1,	1,	1,	1],
+            [1,	1,	0,	0,	1,	1,	0,	0,	0,	0,	1,	1,	1,	1],
+            [1,	1,	0,	0,	1,	1,	0,	0,	0,	0,	1,	1,	1,	0],
+            [1,	1,	0,	0,	1,	1,	0,	0,	0,	0,	1,	1,	0,	0]]
+    cov = np.asarray(cov).T
+    print('\nContext structure D:')
+    print(cov)
+    return cov
+
+
+def setup_inputs(args, context_setup=None):
     """ Setup inputs and attributes.
     - On each trial we have both one-hot context input and one-hot item input
-      each item 1:8 will be assessed in each of 4 different contexts."""
+      each item 1:8 will be assessed in each of 4 different contexts.
+      - context_setup:  a preset arrangement of context similarity structures."""
+
+    if context_setup=='rm08':
+        # Note that these are the covariance structures used in the 08 paper, but seem a bit arbitrary
+        args.n_items, args.n_attributes, args.n_contexts = 8, 14, 4
+        args.n_outputs = args.n_attributes * args.n_domains * args.n_contexts
+        args.n_unique = args.n_domains * args.n_contexts * args.n_items
+        args.D_item_in = args.n_items * args.n_domains
+        args.D_context_in = args.n_contexts * args.n_domains
+        args.D_out = args.n_attributes * args.n_domains * args.n_contexts
 
     max_itemsize = args.n_items*args.n_domains
     max_contextsize = args.n_contexts*args.n_domains
 
     # id/words for each input
     all_domain_words = ['company','mammals','monarchy', 'fourthone']
-    all_context_words = ['human size','popularity','number of teeth', 'dietary preferences', 'friendliness', 'dog common ancestry','conA','conB']
+    all_context_words = ['human size','popularity','humans_conC','humans_conD','number of teeth', 'dietary preferences', 'animals_conC','animals_conD','friendliness', 'dog common ancestry','dogs_conC','dogs_conD','conA','conB', 'conC', 'conD']
     all_item_words = [ 'katie','michael','teresa','taika','Mr Perez','Ms Que','Mrs Wellie','Mr X', \
                         'lion','elephant','monkey','mouse','sheep','ferret','gazelle','pig', \
                         'chow chow','alaskan malamute','siberian husky','saluki','basenji','grey wolf','shar pei','akita inu',\
@@ -195,16 +286,35 @@ def setup_inputs(args):
     return lookup, inputs, words
 
 
-def setup_outputs(args, lookup):
+def setup_outputs(args, lookup, context_setup=None):
     """Each item has a set of attributes pertaining to it in each context,
     and as with items and contexts, each domain has its own completely distinct set.
     - There are [n_attributes x n_domains x n_contexts]  outputs in total, so 15 for each
-     context in each domain, and each item activates some subset of these."""
+     context in each domain, and each item activates some subset of these.
+    - context_setup:  a preset arrangement of context similarity structures."""
 
-    context_cov_A = make_unbalanced_hierarchy(args.n_items, args.n_attributes);  # HRS note this is hacked together for now
-    #context_cov_B = make_magnitude(args.n_items, args.n_attributes);
-    context_cov_B = make_context2_struct(args.n_items, args.n_attributes);
-    context_covs = [context_cov_A, context_cov_B]
+    if context_setup=='assym_mix':
+        context_cov_A = make_unbalanced_hierarchy(args.n_items, args.n_attributes)
+        context_cov_B = make_context2_struct(args.n_items, args.n_attributes)
+        #context_cov_B = make_magnitude(args.n_items, args.n_attributes)
+        context_covs = [context_cov_A, context_cov_B]
+    elif context_setup=='rm08':
+        # Note that these are the covariance structures used in the 08 paper, but seem a bit arbitrary
+        args.n_items, args.n_attributes = 8, 14
+        args.n_outputs = args.n_attributes * args.n_domains * args.n_contexts
+        args.n_unique = args.n_domains * args.n_contexts * args.n_items
+        args.D_item_in = args.n_items * args.n_domains
+        args.D_context_in = args.n_contexts * args.n_domains
+        args.D_out = args.n_attributes * args.n_domains * args.n_contexts
+
+        context_cov_A = make_rm_structA(args.n_items, args.n_attributes)
+        context_cov_B = make_rm_structB(args.n_items, args.n_attributes)
+        context_cov_C = make_rm_structC(args.n_items, args.n_attributes)
+        context_cov_D = make_rm_structD(args.n_items, args.n_attributes)
+        context_covs = [context_cov_A, context_cov_B, context_cov_C, context_cov_D]
+    else:
+        print("Please use 'context_setup' to specify a context structure to use. Exiting.")
+        sys.exit()
 
     plt.figure()
     plt.subplot(1,2,1)
@@ -260,14 +370,14 @@ def plot_output_rdm(args, attributes, lookup):
         total_attribute_activity[context_idx,:,:] = attribute_activity
         total_attribute_distance[context_idx,:,:] = attribute_distance
 
-        plt.subplot(2,2,context_idx * args.n_contexts + 1)
+        plt.subplot(args.n_contexts,2,context_idx * 2 + 1)
         plt.imshow(attribute_activity)
         plt.colorbar
         plt.title('Output activity vectors')
         plt.xlabel('output units')
         plt.ylabel('items x domains')
 
-        plt.subplot(2,2,context_idx * args.n_contexts + 2)
+        plt.subplot(args.n_contexts,2,context_idx * 2 + 2)
         plt.imshow(attribute_distance)
         plt.colorbar
         plt.title('Output RDM')
@@ -352,7 +462,7 @@ def plot_learning_curve(record_name):
     plt.savefig(const.FIGURE_DIRECTORY + 'traintraj_' + record_name[:-5] + '.pdf', bbox_inches='tight')
 
 
-def analyse_network(args, trainset, testset, lookup):
+def analyse_network(args, trainset, testset, lookup, context_setup):
     """Analyse the hidden unit activations for each unique input in each context.
     """
     model_name, analysis_name, record_name = net.get_model_name(args)
@@ -380,7 +490,14 @@ def analyse_network(args, trainset, testset, lookup):
 
         item_activations, context_activations, combined_activations = all_activations
         layers = ['items','contexts','combined']
-        context_texts = ['hierarchy','hierarchy']
+
+        if context_setup=='assym_mix':
+            context_texts = ['mixed con struct','mixed con struct']
+        elif context_setup=='rm08':
+            context_texts = ['rm_conA','rm_conB', 'rm_conC', 'rm_conD']
+        else:
+            context_texts = ['hierarchy','hierarchy']
+
         hidden_sizes = [args.D_h_item, args.D_h_context, args.D_h_combined]
 
         # combined layer for now
@@ -409,14 +526,14 @@ def analyse_network(args, trainset, testset, lookup):
                 total_hidden_activity[context_idx,:,:] = hidden_activity
                 total_hidden_distance[context_idx,:,:] = hidden_distance
 
-                plt.subplot(2,2,context_idx * args.n_contexts + 1)
+                plt.subplot(args.n_contexts,2,context_idx * 2 + 1)
                 plt.imshow(hidden_activity)
                 plt.colorbar
                 plt.title(layer + 'hidden layer')
                 plt.xlabel('hidden units')
                 plt.ylabel('items x domains')
 
-                plt.subplot(2,2,context_idx * args.n_contexts + 2)
+                plt.subplot(args.n_contexts,2,context_idx * 2 + 2)
                 plt.imshow(hidden_distance)
                 plt.colorbar
                 plt.title(layer + 'hidden RDM: ' + context_text)
@@ -435,27 +552,3 @@ def analyse_network(args, trainset, testset, lookup):
             plt.savefig(const.FIGURE_DIRECTORY + layer + 'hidden_activity_RDMs_meancontext_'+model_name[7:-4]+'.pdf',bbox_inches='tight')
 
             plot_hierarchical_cluster(total_hidden_distance, 'hiddencombined')
-
-
-
-def main():
-    args, device = get_config()
-
-    # set up the task
-    lookup, inputs, words = setup_inputs(args)
-    attributes = setup_outputs(args, lookup)
-
-    # define train and test sets
-    dataset = {'index':list(range(args.n_unique)),'input_item':inputs[0],'input_context':inputs[1],'label':attributes, 'words':words, 'domains':inputs[2]}
-    trainset = net.CreateDataset(dataset)
-    testset = net.CreateDataset(dataset)  # HRS note that, for now, train and test are same dataset. As in Rogers/McClelland
-
-    # train and test network
-    model, id = net.train_network(args, device, trainset, testset)
-    args.id = id
-
-    # analyse trained network hidden activations and training trajectory
-    analyse_network(args, trainset, testset, lookup)
-
-
-main()
